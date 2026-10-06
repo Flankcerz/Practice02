@@ -1,0 +1,43 @@
+// ГРУПИ
+Group gGreenhouse "Greenhouse System" <greenhouse>
+Group gSensors    "Sensors Group"     <sensor>     (gGreenhouse)
+Group gActuators  "Actuators Group"   <switch>     (gGreenhouse)
+
+// ДАТЧИКИ (з семантичними тегами)
+Number:Temperature Greenhouse_AirTemp "Air Temp [%.1f °C]" <temperature> (gSensors) ["Measurement", "Temperature"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:air_temp" }
+
+Number:Dimensionless Greenhouse_AirHum "Air Humidity [%.1f %%]" <humidity> (gSensors) ["Measurement", "Humidity"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:air_hum" }
+
+Number:Temperature Greenhouse_SoilTemp "Soil Temp [%.1f °C]" <temperature> (gSensors) ["Measurement", "Temperature"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:soil_temp" }
+
+Number Greenhouse_SoilMoist "Soil Moisture [%.0f %%]" <moisture> (gSensors) ["Measurement", "Humidity"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:soil_moist" }
+
+Number Greenhouse_Lux "Illuminance [%.0f Ix]" <sun> (gSensors) ["Measurement", "Illuminance"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:lux" }
+
+Number Greenhouse_AirQuality "Air Quality AQI [%d]" <smoke> (gSensors) ["Measurement"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:air_qual" }
+
+// АКТУАТОРИ
+Switch Greenhouse_Pump "Water Pump" <pump> (gActuators) ["Switch", "Irrigation"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:pump" }
+
+Dimmer Greenhouse_Fan "Fan Speed [%d %%]" <fan> (gActuators) ["HVAC", "Wind"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:fan" }
+
+Dimmer Greenhouse_LED "Fyto Light Brightness [%d %%]" <light> (gActuators) ["Lighting"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:led" }
+
+Switch Greenhouse_Heater "Heating Element" <heating> (gActuators) ["Switch", "Heater"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:heater" }
+
+Number Greenhouse_Window "Window Servo Angle [%d °]" <door> (gActuators) ["OpenLevel"] 
+    { channel="mqtt:topic:mosquitto:esp32_greenhouse:window" }
+
+// ВІРТУАЛЬНІ ПАРAМЕТРИ ТА СТАТУСИ
+String Greenhouse_Climate_Status "Climate Mode [%s]" <settings> (gGreenhouse)
+Switch Greenhouse_Auto_Mode "Automatic Control Mode" <switch> (gGreenhouse)

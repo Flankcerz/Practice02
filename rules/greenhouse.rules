@@ -1,0 +1,70 @@
+// Правило 1: Автоматичний термоконтроль (Опалення та Провітрювання)
+rule "Climate Control Automation"
+when
+    Item Greenhouse_AirTemp changed
+then
+    if (Greenhouse_Auto_Mode.state != ON) return;
+
+    var Number currentTemp = Greenhouse_AirTemp.state as Number
+
+    // Нижній поріг: Увімкнути нагрівач, закрити вікна
+    if (currentTemp < 18.0) {
+        if (Greenhouse_Heater.state != ON) Greenhouse_Heater.sendCommand(ON)
+        if (Greenhouse_Window.state != 0) Greenhouse_Window.sendCommand(0)
+        Greenhouse_Climate_Status.postUpdate("Heating Mode Active")
+    } 
+    // Оптимальний діапазон
+    else if (currentTemp >= 18.0 && currentTemp <= 26.0) {
+        if (Greenhouse_Heater.state != OFF) Greenhouse_Heater.sendCommand(OFF)
+        if (Greenhouse_Fan.state != 0) Greenhouse_Fan.sendCommand(0)
+        if (Greenhouse_Window.state != 0) Greenhouse_Window.sendCommand(0)
+        Greenhouse_Climate_Status.postUpdate("Optimal Climate")
+    } 
+    // Верхній поріг: Провітрювання (відкриття вікна та вентилятора)
+    else if (currentTemp > 26.0) {
+        if (Greenhouse_Heater.state != OFF) Greenhouse_Heater.sendCommand(OFF)
+        if (Greenhouse_Window.state != 90) Greenhouse_Window.sendCommand(90) // Відкрити на 90 градусів
+        if (Greenhouse_Fan.state != 100) Greenhouse_Fan.sendCommand(100)  // Максимальні оберти
+        Greenhouse_Climate_Status.postUpdate("Cooling & Ventilation Active")
+    }
+end
+
+// Правило 2: Адаптивний полив на основі вологості ґрунту
+rule "Smart Irrigation System"
+when
+    Item Greenhouse_SoilMoist changed
+then
+    if (Greenhouse_Auto_Mode.state != ON) return;
+
+    var Number moisture = Greenhouse_SoilMoist.state as Number
+
+    // Полив при вологості нижче 35%
+    if (moisture < 35 && Greenhouse_Pump.state != ON) {
+        Greenhouse_Pump.sendCommand(ON)
+        logInfo("Irrigation", "Увага: Вологість ґрунту низька (" + moisture + "%). Автоматичний полив УВІМКНЕНО.")
+        
+        // Таймер безпеки: вимкнути насос через 15 секунд (захист від переливу)
+        createTimer(now.plusSeconds(15), [|
+            Greenhouse_Pump.sendCommand(OFF)
+            logInfo("Irrigation", "Автоматичний полив ЗАВЕРШЕНО.")
+        ])
+    }
+end
+
+// Правило 3: Досвічування фітолампами (Астрономічне регулювання)
+rule "Fyto LED Lighting Control"
+when
+    Channel "astro:sun:home:set#event" triggered START // Початок заходу сонця
+then
+    if (Greenhouse_Auto_Mode.state == ON) {
+        Greenhouse_LED.sendCommand(80) // Ввімкнути фітосвітло на 80%
+        logInfo("Lighting", "Захід сонця: увімкнено дотаткове фітоосвітлення.")
+    }
+end
+
+rule "Turn off Fyto LED Night"
+when
+    Time cron "0 0 22 * * ?" // Щодня о 22:00
+then
+    Greenhouse_LED.sendCommand(0) // Вимкнути світло для нічного відпочинку рослин
+end
