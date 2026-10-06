@@ -1,43 +1,32 @@
-// ГРУПИ
-Group gGreenhouse "Greenhouse System" <greenhouse>
-Group gSensors    "Sensors Group"     <sensor>     (gGreenhouse)
-Group gActuators  "Actuators Group"   <switch>     (gGreenhouse)
+// MQTT Брокер
+Bridge mqtt:broker:mosquitto "Mosquitto MQTT Broker" [
+    host="127.0.0.1",
+    port=1883,
+    secure=false,
+    clientID="OpenHAB3_Greenhouse"
+] {
+    // Вузол ESP32 Теплиця
+    Thing topic esp32_greenhouse "ESP32 Greenhouse Node" {
+    Channels:
+        // Датчики
+        Type number : air_temp "Air Temperature" [ stateTopic="greenhouse/sensors/air_temperature" ]
+        Type number : air_hum  "Air Humidity"    [ stateTopic="greenhouse/sensors/air_humidity" ]
+        Type number : soil_temp "Soil Temperature" [ stateTopic="greenhouse/sensors/soil_temperature" ]
+        Type number : soil_moist "Soil Moisture"  [ stateTopic="greenhouse/sensors/soil_moisture" ]
+        Type number : lux        "Illuminance"    [ stateTopic="greenhouse/sensors/illuminance" ]
+        Type number : air_qual   "Air Quality"    [ stateTopic="greenhouse/sensors/air_quality" ]
 
-// ДАТЧИКИ (з семантичними тегами)
-Number:Temperature Greenhouse_AirTemp "Air Temp [%.1f °C]" <temperature> (gSensors) ["Measurement", "Temperature"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:air_temp" }
+        // Актуатори
+        Type switch : pump   "Water Pump"    [ stateTopic="greenhouse/actuators/pump/state", commandTopic="greenhouse/actuators/pump/set", on="ON", off="OFF" ]
+        Type dimmer : fan    "Ventilation Fan" [ stateTopic="greenhouse/actuators/fan/state", commandTopic="greenhouse/actuators/fan/set" ]
+        Type dimmer : led    "Fyto LED Light" [ stateTopic="greenhouse/actuators/led/state", commandTopic="greenhouse/actuators/led/set" ]
+        Type switch : heater "Heater Relay"   [ stateTopic="greenhouse/actuators/heater/state", commandTopic="greenhouse/actuators/heater/set", on="ON", off="OFF" ]
+        Type number : window "Window Servo Angle" [ stateTopic="greenhouse/actuators/window/state", commandTopic="greenhouse/actuators/window/set" ]
+    }
+}
 
-Number:Dimensionless Greenhouse_AirHum "Air Humidity [%.1f %%]" <humidity> (gSensors) ["Measurement", "Humidity"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:air_hum" }
+// Астрономічний Binding для визначення сходу та заходу сонця
+astro:sun:home "Sun Data" [ latitude=50.4501, longitude=30.5234, interval=300 ]
 
-Number:Temperature Greenhouse_SoilTemp "Soil Temp [%.1f °C]" <temperature> (gSensors) ["Measurement", "Temperature"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:soil_temp" }
-
-Number Greenhouse_SoilMoist "Soil Moisture [%.0f %%]" <moisture> (gSensors) ["Measurement", "Humidity"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:soil_moist" }
-
-Number Greenhouse_Lux "Illuminance [%.0f Ix]" <sun> (gSensors) ["Measurement", "Illuminance"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:lux" }
-
-Number Greenhouse_AirQuality "Air Quality AQI [%d]" <smoke> (gSensors) ["Measurement"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:air_qual" }
-
-// АКТУАТОРИ
-Switch Greenhouse_Pump "Water Pump" <pump> (gActuators) ["Switch", "Irrigation"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:pump" }
-
-Dimmer Greenhouse_Fan "Fan Speed [%d %%]" <fan> (gActuators) ["HVAC", "Wind"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:fan" }
-
-Dimmer Greenhouse_LED "Fyto Light Brightness [%d %%]" <light> (gActuators) ["Lighting"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:led" }
-
-Switch Greenhouse_Heater "Heating Element" <heating> (gActuators) ["Switch", "Heater"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:heater" }
-
-Number Greenhouse_Window "Window Servo Angle [%d °]" <door> (gActuators) ["OpenLevel"] 
-    { channel="mqtt:topic:mosquitto:esp32_greenhouse:window" }
-
-// ВІРТУАЛЬНІ ПАРAМЕТРИ ТА СТАТУСИ
-String Greenhouse_Climate_Status "Climate Mode [%s]" <settings> (gGreenhouse)
-Switch Greenhouse_Auto_Mode "Automatic Control Mode" <switch> (gGreenhouse)
+// Network Binding для контролю доступності ESP32
+network:pingdevice:esp32_ping "ESP32 Ping Monitor" [ hostname="192.168.1.150", retry=1, timeout=5000 ]
